@@ -1,0 +1,9 @@
+{
+  "domain": "iot_data",
+  "name": "iot-data",
+  "version": "0.0.0",
+  "integration_type": "device",
+  "requirements": ["aiohttp"],
+  "iot_class": "cloud_push",
+  "config_flow": true
+}

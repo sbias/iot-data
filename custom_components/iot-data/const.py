@@ -1,0 +1,1 @@
+DOMAIN = "iot_data"
