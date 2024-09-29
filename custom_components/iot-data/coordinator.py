@@ -25,7 +25,7 @@ class IotDataOrgCoordinator():
                             data = msg.json()
 
                             if data['d'] in self.add_sensors_cb:
-                                uniq_id = f"{data['d']}_{data['e']}"
+                                uniq_id = f"{data['d']}_{data['a']}"
                                 if uniq_id not in self.entity_map:
                                     sensor = TestSensor()
                                     sensor._attr_unique_id = uniq_id
@@ -75,7 +75,7 @@ class IotDataOrgCoordinator():
     async def state_listener(self, device_key, event):
         state = event.data.get("new_state")
         if self.websocket:
-            await self.websocket.send_json({'d': device_key, 'e': state.entity_id.replace('.', '_'), 'v': state.state})
+            await self.websocket.send_json({'d': device_key, 'a': state.entity_id.replace('.', '_'), 'v': state.state})
             meta =  state.attributes
-            await self.websocket.send_json({'d': device_key, 'e': state.entity_id.replace('.', '_'), 'm': meta})
+            await self.websocket.send_json({'d': device_key, 'a': state.entity_id.replace('.', '_'), 'm': meta})
 
