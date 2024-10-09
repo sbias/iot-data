@@ -69,7 +69,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
        schema = {}
        for attr in info['attributes']:
-            schema[
+            if '.' not in attr:
+                schema[
                     vol.Optional(
                         attr,
                         description={
