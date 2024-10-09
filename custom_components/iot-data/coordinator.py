@@ -76,6 +76,6 @@ class IotDataOrgCoordinator():
         state = event.data.get("new_state")
         if self.websocket:
             await self.websocket.send_json({'d': device_key, 'a': attr, 'v': state.state})
-            meta =  state.attributes
-            await self.websocket.send_json({'d': device_key, 'a': attr, 'm': meta})
+#            meta =  state.attributes
+#            await self.websocket.send_json({'d': device_key, 'a': attr, 'm': meta})
 
