@@ -2,7 +2,14 @@ import aiohttp
 import asyncio
 from .sensor import TestSensor
 
-
+async def iotdata_dev_info(dev, sec):
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            'https://www.iot-data.org/a/info',
+            json={'dev': dev, 'sec': sec}
+        ) as resp:
+            return await resp.json()
+        
 class IotDataOrgCoordinator():
     def __init__(self):
         self.testsensor = None
@@ -12,7 +19,6 @@ class IotDataOrgCoordinator():
         self.subscriptions = []
 
     async def amain(self, hass):
-
       while True:
         async with aiohttp.ClientSession() as session:
             try:
@@ -26,13 +32,7 @@ class IotDataOrgCoordinator():
 
                             if data['d'] in self.add_sensors_cb:
                                 uniq_id = f"{data['d']}_{data['a']}"
-                                if uniq_id not in self.entity_map:
-                                    sensor = TestSensor()
-                                    sensor._attr_unique_id = uniq_id
-                                    self.add_sensors_cb[data['d']]([sensor])
-                                    self.entity_map[uniq_id] = sensor
-                                else:
-                                    sensor = self.entity_map[uniq_id]
+                                sensor = self.entity_map[uniq_id]
 
                                 if 'v' in data:
                                     v = data['v']
@@ -43,14 +43,8 @@ class IotDataOrgCoordinator():
                                             state = float(data['v'])
                                         except ValueError:
                                             state = str(data['v'])
-                                    sensor.state = state  
-                                    sensor.async_schedule_update_ha_state()
+                                    sensor.setval(state)
                                 
-                                elif 'm' in data:
-                                    m = data['m']
-                                    if 'unit_of_measurement' in m:
-                                        sensor.unit_of_measurement = m['unit_of_measurement']
-
                                 else:
                                     pass # unhandled data
 
@@ -64,6 +58,26 @@ class IotDataOrgCoordinator():
         await asyncio.sleep(180)
 
     async def subscribe(self, device_key, secret):
+        retry_delay = 5
+        while True:
+            try:
+                info = await iotdata_dev_info(device_key, secret)
+                break
+            except Exception as ex:
+                print(ex)
+                await asyncio.sleep(retry_delay)
+                retry_delay += 5
+
+        for attr in info['attributes']:
+            uniq_id = f"{device_key}_{attr['name']}"
+            if uniq_id not in self.entity_map:
+                sensor = TestSensor(uniq_id)
+                sensor.unit_of_measurement = attr['uom']
+                sensor.icon = attr['icon']
+               # sensor.state_class = attr['state_class']
+                self.add_sensors_cb[device_key]([sensor])
+                self.entity_map[uniq_id] = sensor
+
         subscription = [device_key, secret]
         self.subscriptions.append(subscription)
         await self.send_subscribe(*subscription)
@@ -75,7 +89,10 @@ class IotDataOrgCoordinator():
     async def state_listener(self, device_key, attr, event):
         state = event.data.get("new_state")
         if self.websocket:
-            await self.websocket.send_json({'d': device_key, 'a': attr, 'v': state.state})
+            try:
+                await self.websocket.send_json({'d': device_key, 'a': attr, 'v': state.state})
+            except aiohttp.client_exceptions.ClientConnectionResetError:
+                await self.websocket.close()
 #            meta =  state.attributes
 #            await self.websocket.send_json({'d': device_key, 'a': attr, 'm': meta})
 

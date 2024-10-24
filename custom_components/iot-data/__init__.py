@@ -6,8 +6,8 @@ from homeassistant.helpers.event import async_track_state_change_event
 
 async def async_setup(hass, config):
     coordinator = IotDataOrgCoordinator()
-    asyncio.create_task(coordinator.amain(hass))
     hass.data.setdefault(DOMAIN, {})['coordinator'] = coordinator
+    asyncio.create_task(coordinator.amain(hass))
 
     return True
 
@@ -21,12 +21,12 @@ async def async_setup_entry(hass, entry):
     device_key = entry.data['device_key']
     secret = entry.data['secret']
 
+    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+
     await coordinator.subscribe(device_key, secret)
 
     for attr, entity_id in entry.options.items():
         async_track_state_change_event(hass, entity_id, async_state_listener_partial(coordinator, device_key, attr))
-
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
     return True
 

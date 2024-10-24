@@ -8,17 +8,8 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import selector
 from homeassistant import config_entries
 from homeassistant.core import callback
-from aiohttp import ClientSession
 
-async def iotdata_dev_info(dev, sec):
-    async with ClientSession() as session:
-        async with session.post(
-            'https://www.iot-data.org/a/info',
-            json={'dev': dev, 'sec': sec}
-        ) as resp:
-            return await resp.json()
-
-
+from .coordinator import iotdata_dev_info
 
 class IotDataOrgConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 0
@@ -69,12 +60,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
        schema = {}
        for attr in info['attributes']:
-            if '.' not in attr:
+            if attr['mapped'] and '.' not in attr['mapped']:
                 schema[
                     vol.Optional(
-                        attr,
+                        attr['mapped'],
                         description={
-                            "suggested_value": self.config_entry.options.get(attr, "")
+                            "suggested_value": self.config_entry.options.get(attr['mapped'], "")
                         }
                     )
                 ] = selector.EntitySelector(selector.EntitySelectorConfig(multiple=False))
