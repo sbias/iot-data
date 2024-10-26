@@ -72,11 +72,11 @@ class IotDataOrgCoordinator():
             uniq_id = f"{device_key}_{attr['name']}"
             if uniq_id not in self.entity_map:
                 sensor = TestSensor(uniq_id)
+                self.add_sensors_cb[device_key]([sensor])
+                self.entity_map[uniq_id] = sensor
                 sensor.unit_of_measurement = attr['uom']
                 sensor.icon = attr['icon']
                # sensor.state_class = attr['state_class']
-                self.add_sensors_cb[device_key]([sensor])
-                self.entity_map[uniq_id] = sensor
 
         subscription = [device_key, secret]
         self.subscriptions.append(subscription)
@@ -88,7 +88,7 @@ class IotDataOrgCoordinator():
 
     async def state_listener(self, device_key, attr, event):
         state = event.data.get("new_state")
-        if self.websocket:
+        if self.websocket and state:
             try:
                 await self.websocket.send_json({'d': device_key, 'a': attr, 'v': state.state})
             except aiohttp.client_exceptions.ClientConnectionResetError:
