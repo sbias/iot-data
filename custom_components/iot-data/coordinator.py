@@ -40,18 +40,19 @@ class IotDataOrgCoordinator():
 
                             if data['d'] in self.add_sensors_cb:
                                 uniq_id = f"{data['d']}_{data['a']}"
-                                sensor = self.entity_map[uniq_id]
+                                if uniq_id in self.entity_map:
+                                    sensor = self.entity_map[uniq_id]
 
-                                if 'v' in data:
-                                    v = data['v']
-                                    if v == 'unavailable' or v == 'unknown':
-                                        state = None                              
-                                    else:
-                                        try:
-                                            state = float(data['v'])
-                                        except ValueError:
-                                            state = str(data['v'])
-                                    sensor.setval(state)
+                                    if 'v' in data:
+                                        v = data['v']
+                                        if v == 'unavailable' or v == 'unknown':
+                                            state = None                              
+                                        else:
+                                            try:
+                                                state = float(data['v'])
+                                            except ValueError:
+                                                state = str(data['v'])
+                                        sensor.setval(state)
                                 
                                 else:
                                     pass # unhandled data
