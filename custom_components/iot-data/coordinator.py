@@ -1,11 +1,12 @@
 import aiohttp
 import asyncio
 import ssl
+import os
 from .sensor import TestSensor
 
 async def iotdata_dev_info(dev, sec):
     ssl_ctx = ssl.create_default_context()
-    ssl_ctx.load_verify_locations("custom_components/iot-data/iot-data-ca.crt")
+    ssl_ctx.load_verify_locations(os.path.dirname(__file__) + "/iot-data-ca.crt")
     conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
     async with aiohttp.ClientSession(connector=conn) as session:
         async with session.post(
@@ -24,7 +25,7 @@ class IotDataOrgCoordinator():
 
     async def amain(self, hass):
       ssl_ctx = ssl.create_default_context()
-      ssl_ctx.load_verify_locations("custom_components/iot-data/iot-data-ca.crt")
+      ssl_ctx.load_verify_locations(os.path.dirname(__file__) + "/iot-data-ca.crt")
       conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
       while True:
         async with aiohttp.ClientSession(connector=conn) as session:
