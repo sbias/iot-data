@@ -1,11 +1,15 @@
 import aiohttp
 import asyncio
+import ssl
 from .sensor import TestSensor
 
 async def iotdata_dev_info(dev, sec):
-    async with aiohttp.ClientSession() as session:
+    ssl_ctx = ssl.create_default_context()
+    ssl_ctx.load_verify_locations("custom_components/iot-data/iot-data-ca.crt")
+    conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
+    async with aiohttp.ClientSession(connector=conn) as session:
         async with session.post(
-            'https://www.iot-data.org/a/info',
+            'https://sdk.iot-data.org/a/info',
             json={'dev': dev, 'sec': sec}
         ) as resp:
             return await resp.json()
@@ -19,10 +23,13 @@ class IotDataOrgCoordinator():
         self.subscriptions = []
 
     async def amain(self, hass):
+      ssl_ctx = ssl.create_default_context()
+      ssl_ctx.load_verify_locations("custom_components/iot-data/iot-data-ca.crt")
+      conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
       while True:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=conn) as session:
             try:
-                async with session.ws_connect('https://www.iot-data.org/a/wj', heartbeat=119.0) as websocket:
+                async with session.ws_connect('https://sdk.iot-data.org/a/wj', heartbeat=119.0) as websocket:
                     self.websocket = websocket
                     for subscription in self.subscriptions:
                         await self.send_subscribe(*subscription)
